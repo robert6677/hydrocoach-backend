@@ -86,6 +86,13 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+if (req.url.startsWith("/callback") && req.method === "GET") {
+  const code = new URL(req.url, "http://localhost").searchParams.get("code");
+  res.writeHead(200);
+  res.end(JSON.stringify({ code: code }));
+  return;
+}
+    
     res.writeHead(404);
     res.end(JSON.stringify({ error: "Nicht gefunden" }));
   });
