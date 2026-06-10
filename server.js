@@ -13,29 +13,34 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 // Init DB tables
 async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS athletes (
-      id BIGINT PRIMARY KEY,
-      firstname TEXT,
-      access_token TEXT,
-      refresh_token TEXT,
-      expires_at BIGINT,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS activities (
-      id BIGINT PRIMARY KEY,
-      athlete_id BIGINT,
-      fluid_loss_ml INT,
-      duration_seconds INT,
-      distance_m FLOAT,
-      heartrate INT,
-      elevation_m FLOAT,
-      temp_c FLOAT,
-      sport_type TEXT,
-      recorded_at TIMESTAMP DEFAULT NOW()
-    );
-  `);
-  console.log("DB ready");
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS athletes (
+        id BIGINT PRIMARY KEY,
+        firstname TEXT,
+        access_token TEXT,
+        refresh_token TEXT,
+        expires_at BIGINT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS activities (
+        id BIGINT PRIMARY KEY,
+        athlete_id BIGINT,
+        fluid_loss_ml INT,
+        duration_seconds INT,
+        distance_m FLOAT,
+        heartrate INT,
+        elevation_m FLOAT,
+        temp_c FLOAT,
+        sport_type TEXT,
+        recorded_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log("DB ready");
+  } catch(e) {
+    console.error("DB init error:", e.message);
+    console.log("Server laeuft ohne DB");
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
