@@ -399,5 +399,13 @@ http.createServer((req, res) => {
 
 }).listen(PORT, "0.0.0.0", () => {
   console.log("HydroCoach Port " + PORT);
-  initDB();
+  setTimeout(() => initDB(), 3000);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught:", err.message);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled:", err);
 });
