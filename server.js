@@ -192,7 +192,7 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
 ${ampel} ${load} – heute auf Erholung achten
 👉 Trink ${drinkL}L – Flüssigkeit & Ruhe priorisieren${needsElectrolytes ? "\n💡 Elektrolyte empfohlen" : ""}
 
-HydroCoach`;
+HydroPwr`;
   } else if (cardType === "heat") {
     msg = `💧 ${lossL}L Flüssigkeitsverlust
 🌡️ Hitze hat den Verlust deutlich erhöht${comparison ? `\n${comparison}` : ""}
@@ -201,7 +201,7 @@ ${ampel} ${load} – erhöhte Belastung durch Hitze
 👉 Trink ${drinkL}L in den nächsten 2h
 💡 Elektrolyte empfohlen
 
-HydroCoach`;
+HydroPwr`;
   } else if (cardType === "fatigue") {
     msg = `💧 ${lossL}L Flüssigkeitsverlust
 📊 ${recentIntense + 1}. intensive Einheit in 5 Tagen${comparison ? `\n${comparison}` : ""}
@@ -210,14 +210,14 @@ ${ampel} Erhöhte Gesamtbelastung
 👉 Recovery priorisieren
 💡 Flüssigkeit & Schlaf besonders wichtig
 
-HydroCoach`;
+HydroPwr`;
   } else {
     msg = `💧 ${lossL}L Flüssigkeitsverlust${comparison ? `\n${comparison}` : ""}
 
 ${ampel} ${load}
 👉 Trink ${drinkL}L heute${needsElectrolytes ? "\n💡 Elektrolyte optional" : ""}
 
-HydroCoach`;
+HydroPwr`;
   }
 
   return msg;
