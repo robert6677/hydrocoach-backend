@@ -394,7 +394,29 @@ http.createServer((req, res) => {
     });
     return;
   }
-
+// Setup: Webhook bei Strava registrieren
+if (req.url === "/setup" && req.method === "GET") {
+  const data = JSON.stringify({
+    client_id: CLIENT_ID,
+    client_secret: CLIENT_SECRET,
+    callback_url: `${BACKEND_URL}/webhook`,
+    verify_token: WEBHOOK_VERIFY_TOKEN
+  });
+  const reqS = https.request({
+    hostname: "www.strava.com",
+    path: "/api/v3/push_subscriptions",
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) }
+  }, (resS) => {
+    let raw = "";
+    resS.on("data", c => raw += c);
+    resS.on("end", () => send(res, 200, JSON.parse(raw)));
+  });
+  reqS.on("error", (e) => send(res, 500, { error: e.message }));
+  reqS.write(data);
+  reqS.end();
+  return;
+}
   send(res, 404, { error: "Nicht gefunden" });
 
 }).listen(PORT, "0.0.0.0", () => {
