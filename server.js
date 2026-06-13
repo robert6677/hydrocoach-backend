@@ -303,7 +303,14 @@ http.createServer((req, res) => {
   }
 
   // Health check
-  if (req.url === "/" && req.method === "GET") return send(res, 200, { status: "HydroCoach laeuft!" });
+if (req.url === "/" && req.method === "GET") {
+  const fs = require("fs");
+  const html = fs.readFileSync("./landing.html", "utf8");
+  if (res.headersSent) return;
+  res.writeHead(200, { "Content-Type": "text/html" });
+  res.end(html);
+  return;
+}
 
   // Webhook verification (GET)
   if (req.url.startsWith("/webhook") && req.method === "GET") {
