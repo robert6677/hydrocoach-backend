@@ -303,6 +303,14 @@ http.createServer((req, res) => {
   }
 
   // Health check
+  if (req.url === "/legal" && req.method === "GET") {
+  const fs = require("fs");
+  const html = fs.readFileSync("./legal.html", "utf8");
+  if (res.headersSent) return;
+  res.writeHead(200, { "Content-Type": "text/html" });
+  res.end(html);
+  return;
+}
 if (req.url === "/" && req.method === "GET") {
   const fs = require("fs");
   const html = fs.readFileSync("./landing.html", "utf8");
