@@ -432,6 +432,13 @@ if (req.url === "/webhook-status" && req.method === "GET") {
   reqS.end();
   return;
 }
+  // Debug
+if (req.url === "/debug" && req.method === "GET") {
+  return send(res, 200, {
+    client_id: CLIENT_ID,
+    secret_length: CLIENT_SECRET ? CLIENT_SECRET.length : 0
+  });
+}
   send(res, 404, { error: "Nicht gefunden" });
 
 }).listen(PORT, "0.0.0.0", () => {
