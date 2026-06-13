@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impressum & Datenschutz – HydroPwr</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060d18;
+      --card: #111e30;
+      --border: rgba(34,211,238,0.12);
+      --cyan: #22d3ee;
+      --white: #f0f6ff;
+      --muted: #5a7a9a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 24px 80px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 60px;
+    }
+    .nav-logo {
+      font-weight: 700; font-size: 20px; color: var(--cyan);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--white); }
+    .nav-back {
+      font-size: 14px; color: var(--muted);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--white); }
+
+    h1 {
+      font-size: 32px; font-weight: 700;
+      letter-spacing: -1px; margin-bottom: 48px;
+      color: var(--white);
+    }
+
+    h2 {
+      font-size: 20px; font-weight: 600;
+      margin-top: 48px; margin-bottom: 16px;
+      color: var(--cyan);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 16px; font-weight: 600;
+      margin-top: 24px; margin-bottom: 8px;
+      color: var(--white);
+    }
+
+    p { color: #8aa8c0; margin-bottom: 12px; }
+
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .section-divider {
+      border: none;
+      border-top: 2px solid var(--border);
+      margin: 64px 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 16px;
+    }
+    .card p { margin-bottom: 4px; }
+
+    ul {
+      color: #8aa8c0;
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+    ul li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Hydro<span>Pwr</span></a>
+  <a class="nav-back" href="/">← Zurück</a>
+</nav>
+
+<!-- IMPRESSUM -->
+<h1>Impressum</h1>
+
+<h2>Angaben gemäß § 5 TMG</h2>
+<div class="card">
+  <p><strong>Robert Blechinger</strong></p>
+  <p>Wonnentaler Weg 12a</p>
+  <p>79341 Kenzingen</p>
+  <p>Deutschland</p>
+</div>
+
+<h2>Kontakt</h2>
+<div class="card">
+  <p>E-Mail: <a href="mailto:hallo@hydropwr.app">hallo@hydropwr.app</a></p>
+</div>
+
+<h2>Hinweis zur Online-Streitbeilegung</h2>
+<p>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: <a href="https://ec.europa.eu/consumers/odr" target="_blank">ec.europa.eu/consumers/odr</a>. Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+<h2>Haftungsausschluss</h2>
+<p>HydroPwr stellt Hydrations-Empfehlungen auf Basis von Aktivitätsdaten bereit. Diese Empfehlungen ersetzen keine medizinische Beratung. Bei gesundheitlichen Fragen konsultieren Sie bitte einen Arzt.</p>
+
+<hr class="section-divider">
+
+<!-- DATENSCHUTZ -->
+<h1>Datenschutzerklärung</h1>
+
+<h2>1. Verantwortlicher</h2>
+<p>Verantwortlicher im Sinne der DSGVO:</p>
+<div class="card">
+  <p><strong>Robert Blechinger</strong></p>
+  <p>Wonnentaler Weg 12a, 79341 Kenzingen</p>
+  <p>E-Mail: <a href="mailto:hallo@hydropwr.app">hallo@hydropwr.app</a></p>
+</div>
+
+<h2>2. Welche Daten wir verarbeiten</h2>
+<p>HydroPwr verarbeitet folgende Daten wenn Sie sich mit Strava verbinden:</p>
+<ul>
+  <li>Strava Athlete-ID und Vorname</li>
+  <li>Strava Access-Token und Refresh-Token (verschlüsselt)</li>
+  <li>Aktivitätsdaten: Dauer, Distanz, Herzfrequenz, Höhenprofil, Sportart, Startzeit und -ort</li>
+  <li>Wetterdaten zum Startzeitpunkt der Aktivität (Temperatur)</li>
+  <li>Berechneter Flüssigkeitsverlust pro Aktivität</li>
+</ul>
+
+<h2>3. Zweck der Verarbeitung</h2>
+<p>Die Daten werden ausschließlich verwendet um:</p>
+<ul>
+  <li>Individuelle Hydrations-Empfehlungen zu berechnen</li>
+  <li>Diese Empfehlungen automatisch als Beschreibung in Ihre Strava-Aktivität zu posten</li>
+  <li>Ihren persönlichen Hydrations-Verlauf der letzten 30 Tage für Vergleiche zu nutzen</li>
+</ul>
+
+<h2>4. Rechtsgrundlage</h2>
+<p>Die Verarbeitung erfolgt auf Basis Ihrer ausdrücklichen Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Sie durch die Verbindung mit Strava erteilen.</p>
+
+<h2>5. Speicherdauer</h2>
+<p>Aktivitätsdaten werden für 30 Tage gespeichert um Vergleichswerte zu berechnen. Ihre Tokens werden gespeichert solange Sie HydroPwr nutzen. Sie können jederzeit die Verbindung über Ihre Strava-Einstellungen unter "Meine Apps" trennen – dabei werden alle Ihre Daten gelöscht.</p>
+
+<h2>6. Weitergabe an Dritte</h2>
+<p>Ihre Daten werden nicht an Dritte weitergegeben. Folgende externe Dienste werden genutzt:</p>
+<ul>
+  <li><strong>Strava API</strong> – zum Abruf von Aktivitätsdaten und Posten der Empfehlung</li>
+  <li><strong>Open-Meteo API</strong> – zum Abruf von Wetterdaten (kein Nutzerbezug)</li>
+  <li><strong>Railway</strong> – Hosting des Backends in der EU</li>
+</ul>
+
+<h2>7. Ihre Rechte</h2>
+<p>Sie haben das Recht auf:</p>
+<ul>
+  <li>Auskunft über Ihre gespeicherten Daten</li>
+  <li>Berichtigung unrichtiger Daten</li>
+  <li>Löschung Ihrer Daten</li>
+  <li>Einschränkung der Verarbeitung</li>
+  <li>Widerspruch gegen die Verarbeitung</li>
+  <li>Datenübertragbarkeit</li>
+</ul>
+<p>Für alle Anfragen: <a href="mailto:hallo@hydropwr.app">hallo@hydropwr.app</a></p>
+
+<h2>8. Beschwerderecht</h2>
+<p>Sie haben das Recht, sich bei der zuständigen Datenschutzaufsichtsbehörde zu beschweren. In Baden-Württemberg: <a href="https://www.baden-wuerttemberg.datenschutz.de" target="_blank">Landesbeauftragter für Datenschutz und Informationsfreiheit Baden-Württemberg</a>.</p>
+
+<h2>9. Änderungen</h2>
+<p>Diese Datenschutzerklärung kann angepasst werden. Stand: Juni 2026.</p>
+
+</body>
+</html>
