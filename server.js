@@ -368,9 +368,9 @@ if (req.url === "/" && req.method === "GET") {
 <head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:-apple-system,sans-serif;text-align:center;padding:40px 20px;background:#080f1e;color:white">
   <div style="font-size:60px;margin-bottom:16px">💧</div>
-  <h1 style="color:#22d3ee;margin-bottom:4px">HydroCoach</h1>
+  <h1 style="color:#22d3ee;margin-bottom:4px">HydroPwr</h1>
   <h2 style="font-weight:400;margin-bottom:8px">Hallo, ${token.athlete?.firstname}! 👋</h2>
-  <p style="color:#475569;margin-bottom:24px">Strava verbunden. HydroCoach postet nach jedem Training automatisch.</p>
+  <p style="color:#475569;margin-bottom:24px">Strava verbunden. HydroPwr postet nach jedem Training automatisch.</p>
   <div style="background:#131929;border:1px solid rgba(34,211,238,0.3);border-radius:16px;padding:20px;max-width:300px;margin:0 auto 24px">
     <p style="color:#22d3ee;font-size:13px;margin:0 0 8px">Dein Login-Code:</p>
     <p style="font-size:32px;font-weight:bold;letter-spacing:6px;margin:0 0 8px;color:white">${key}</p>
