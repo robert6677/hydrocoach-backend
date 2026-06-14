@@ -364,23 +364,57 @@ if (req.url === "/" && req.method === "GET") {
       );
       const key = Math.random().toString(36).substring(2, 10);
       tokens[key] = { access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at, athlete: token.athlete };
-      send(res, 200, `<html>
-<head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:-apple-system,sans-serif;text-align:center;padding:40px 20px;background:#080f1e;color:white">
-  <div style="font-size:60px;margin-bottom:16px">💧</div>
-  <h1 style="color:#22d3ee;margin-bottom:4px">HydroPwr</h1>
-  <h2 style="font-weight:400;margin-bottom:8px">Hallo, ${token.athlete?.firstname}! 👋</h2>
-  <p style="color:#475569;margin-bottom:24px">Strava verbunden. HydroPwr postet nach jedem Training automatisch.</p>
-  <div style="background:#131929;border:1px solid rgba(34,211,238,0.3);border-radius:16px;padding:20px;max-width:300px;margin:0 auto 24px">
-    <p style="color:#22d3ee;font-size:13px;margin:0 0 8px">Dein Login-Code:</p>
-    <p style="font-size:32px;font-weight:bold;letter-spacing:6px;margin:0 0 8px;color:white">${key}</p>
-    <p style="color:#475569;font-size:12px;margin:0">Gib diesen Code in der App ein</p>
+      send(res, 200, `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HydroPwr – Verbunden!</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #060d18; color: #f0f6ff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { max-width: 380px; width: 100%; text-align: center; }
+    .emoji { font-size: 56px; margin-bottom: 16px; }
+    h1 { font-size: 28px; font-weight: 700; color: #22d3ee; margin-bottom: 8px; }
+    .greeting { font-size: 20px; font-weight: 500; margin-bottom: 32px; }
+    .box { background: #111e30; border: 1px solid rgba(34,211,238,0.15); border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: left; }
+    .box-title { font-size: 12px; font-weight: 600; color: #22d3ee; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+    .check { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 15px; color: #8aa8c0; line-height: 1.5; }
+    .check:last-child { margin-bottom: 0; }
+    .fact { font-size: 15px; color: #8aa8c0; line-height: 1.6; }
+    .fact strong { color: #f0f6ff; }
+    .btn-strava { display: block; background: #FC4C02; color: white; font-weight: 700; font-size: 16px; padding: 16px; border-radius: 12px; text-decoration: none; margin-bottom: 12px; transition: opacity 0.2s; }
+    .btn-strava:hover { opacity: 0.85; }
+    .btn-share { display: block; background: #111e30; border: 1px solid rgba(34,211,238,0.3); color: #22d3ee; font-weight: 600; font-size: 15px; padding: 14px; border-radius: 12px; text-decoration: none; cursor: pointer; transition: background 0.2s; }
+    .btn-share:hover { background: rgba(34,211,238,0.1); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">💧</div>
+    <h1>HydroPwr</h1>
+    <p class="greeting">Hallo, ${token.athlete?.firstname}! 👋</p>
+
+    <div class="box">
+      <div class="box-title">✅ Ab jetzt automatisch</div>
+      <div class="check"><span>🏃</span><span>Nach jedem Training über 10 Min analysiert HydroPwr deine Aktivität</span></div>
+      <div class="check"><span>🌡️</span><span>Temperatur, Herzfrequenz und Höhenprofil werden einberechnet</span></div>
+      <div class="check"><span>📝</span><span>Deine persönliche Hydrations-Empfehlung erscheint direkt in Strava</span></div>
+    </div>
+
+    <div class="box" style="margin-bottom:32px">
+      <div class="box-title">💡 Wusstest du?</div>
+      <p class="fact">Bei <strong>28°C</strong> verlierst du beim Radfahren bis zu <strong>1.8L pro Stunde</strong> – mehr als die meisten trinken. HydroPwr erinnert dich genau dann daran.</p>
+    </div>
+
+    <a class="btn-strava" href="https://www.strava.com/athlete/training">Strava öffnen 🏆</a>
+    <button class="btn-share" onclick="navigator.share ? navigator.share({title:'HydroPwr',text:'Automatische Hydrations-Empfehlungen nach jedem Strava-Training 💧',url:'https://hydropwr.app'}) : navigator.clipboard.writeText('https://hydropwr.app').then(()=>this.textContent='✅ Link kopiert!')">
+      HydroPwr teilen 🔗
+    </button>
   </div>
-  <button onclick="navigator.clipboard.writeText('${key}').then(()=>this.textContent='✅ Kopiert!')"
-    style="background:linear-gradient(135deg,#0ea5e9,#22d3ee);border:none;border-radius:12px;color:#020c18;font-size:16px;font-weight:bold;padding:14px 32px;cursor:pointer">
-    Code kopieren 📋
-  </button>
-</body></html>`);
+</body>
+</html>`);
     });
     return;
   }
