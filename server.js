@@ -5,7 +5,7 @@ const { Pool } = require("pg");
 const PORT = process.env.PORT || 3000;
 const CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
-const BACKEND_URL = process.env.BACKEND_URL || "https://abundant-surprise-production-b13d.up.railway.app";
+const BACKEND_URL = process.env.BACKEND_URL || "https:/hydropwr.app";
 const WEBHOOK_VERIFY_TOKEN = "hydrocoach_webhook_2024";
 
 // Database
@@ -50,7 +50,7 @@ function send(res, status, body) {
   if (res.headersSent) return;
   const isHtml = typeof body === "string";
   res.writeHead(status, {
-    "Content-Type": isHtml ? "text/html" : "application/json",
+    "Content-Type": isHtml ? "text/html; charset=utf-8" : "application/json",
     "Access-Control-Allow-Origin": "*"
   });
   res.end(isHtml ? body : JSON.stringify(body));
