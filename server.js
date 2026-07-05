@@ -374,7 +374,7 @@ if (req.url === "/" && req.method === "GET") {
       await pool.query(
         `INSERT INTO athletes (id, firstname, access_token, refresh_token, expires_at, birthday) VALUES ($1,$2,$3,$4,$5,$6)
          ON CONFLICT (id) DO UPDATE SET access_token=$3, refresh_token=$4, expires_at=$5`, birthday=$6,
-        [token.athlete.id, token.athlete.firstname, token.access_token, token.refresh_token, token.expires_at, token.athlete.birthday || null]]
+        [token.athlete.id, token.athlete.firstname, token.access_token, token.refresh_token, token.expires_at, token.athlete.birthday || null]
       );
       const key = Math.random().toString(36).substring(2, 10);
       tokens[key] = { access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at, athlete: token.athlete };
