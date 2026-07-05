@@ -173,49 +173,49 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
   if (avgLoss && history.length >= 3) {
     const diff = currentLoss - avgLoss;
     const pct = Math.abs(Math.round((diff / avgLoss) * 100));
-    if (Math.abs(diff) < 100) comparison = "Typisch für dich";
-    else if (diff > 0) comparison = pct > 30 ? "Deutlich mehr als üblich" : "Etwas mehr als üblich";
-    else comparison = pct > 30 ? "Deutlich weniger als üblich" : "Etwas weniger als üblich";
+    if (Math.abs(diff) < 100) comparison = "Typical for you";
+    else if (diff > 0) comparison = pct > 30 ? "Significantly more than usual" : "Slightly more than usual";
+    else comparison = pct > 30 ? "Significantly less than usual" : "Slightly less than usual";
   }
 
   // Ampel
   const ampel = currentLoss > 1200 ? "🔴" : currentLoss > 600 ? "🟡" : "🟢";
-  const load = currentLoss > 1200 ? "Hohe Belastung" : currentLoss > 600 ? "Mittlere Belastung" : "Geringe Belastung";
+  const load = currentLoss > 1200 ? "High Intensity" : currentLoss > 600 ? "Moderate Intensity" : "Low Intensity";
 
   // Build message based on card type
   let msg = "";
 
   if (cardType === "peak") {
-    msg = `💧 ${lossL}L Flüssigkeitsverlust
-📈 Höchster Wert der letzten 14 Tage
+    msg = `💧 ${lossL}L fluid loss
+📈 Highest in the last 14 days
 
-${ampel} ${load} – heute auf Erholung achten
-👉 Trink ${drinkL}L – Flüssigkeit & Ruhe priorisieren${needsElectrolytes ? "\n💡 Elektrolyte empfohlen" : ""}
+${ampel} ${load} – prioritize recovery today
+👉 Drink ${drinkL}L – fluids & rest first${needsElectrolytes ? "\n💡 Electrolytes recommended" : ""}
 
 HydroPwr`;
   } else if (cardType === "heat") {
-    msg = `💧 ${lossL}L Flüssigkeitsverlust
-🌡️ Hitze hat den Verlust deutlich erhöht${comparison ? `\n${comparison}` : ""}
+    msg = `💧 ${lossL}L fluid loss
+🌡️ Heat significantly increased your loss${comparison ? `\n${comparison}` : ""}
 
-${ampel} ${load} – erhöhte Belastung durch Hitze
-👉 Trink ${drinkL}L in den nächsten 2h
-💡 Elektrolyte empfohlen
+${ampel} ${load} – elevated strain from heat
+👉 Drink ${drinkL}L within the next 2h
+💡 Electrolytes recommended
 
 HydroPwr`;
   } else if (cardType === "fatigue") {
-    msg = `💧 ${lossL}L Flüssigkeitsverlust
-📊 ${recentIntense + 1}. intensive Einheit in 5 Tagen${comparison ? `\n${comparison}` : ""}
+    msg = `💧 ${lossL}L fluid loss
+📊 ${recentIntense + 1}rd intense session in 5 days${comparison ? `\n${comparison}` : ""}
 
-${ampel} Erhöhte Gesamtbelastung
-👉 Recovery priorisieren
-💡 Flüssigkeit & Schlaf besonders wichtig
+${ampel} High cumulative load
+👉 Prioritize recovery
+💡 Fluids & sleep especially important
 
 HydroPwr`;
   } else {
-    msg = `💧 ${lossL}L Flüssigkeitsverlust${comparison ? `\n${comparison}` : ""}
+    msg = `💧 ${lossL}L fluid loss${comparison ? `\n${comparison}` : ""}
 
 ${ampel} ${load}
-👉 Trink ${drinkL}L heute${needsElectrolytes ? "\n💡 Elektrolyte optional" : ""}
+👉 Drink ${drinkL}L today${needsElectrolytes ? "\n💡 Electrolytes optional" : ""}
 
 HydroPwr`;
   }
