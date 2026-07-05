@@ -278,7 +278,7 @@ async function processActivity(athleteId, activityId) {
       await pool.query(
         `INSERT INTO activities (id, athlete_id, fluid_loss_ml, duration_seconds, distance_m, heartrate, elevation_m, temp_c, sport_type)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO NOTHING`,
-      [String(activityId), String(athleteId), fluidLoss, durationSec, distanceM, hr, elevationM, tempC, activity.sport_type]
+      [String(activityId), String(athleteId), fluidLoss, durationSec, distanceM, hr ? Math.round(hr) : null, elevationM ? Math.round(elevationM) : null, tempC, activity.sport_type]
       );
 
       // Build card
