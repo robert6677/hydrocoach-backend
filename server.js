@@ -142,7 +142,7 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
   // Get last 30 days of activities for comparison
   const result = await pool.query(
     "SELECT fluid_loss_ml, recorded_at FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '30 days' ORDER BY recorded_at DESC LIMIT 20",
-    [athleteId]
+    [String(athleteId)]
   );
   const history = result.rows;
   const avgLoss = history.length > 0
