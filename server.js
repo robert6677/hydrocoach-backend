@@ -21,6 +21,7 @@ async function initDB() {
         access_token TEXT,
         refresh_token TEXT,
         expires_at BIGINT,
+        birthday TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       );
       CREATE TABLE IF NOT EXISTS activities (
@@ -35,6 +36,7 @@ async function initDB() {
         sport_type TEXT,
         recorded_at TIMESTAMP DEFAULT NOW()
       );
+      ALTER TABLE athletes ADD COLUMN IF NOT EXISTS birthday TEXT;
     `);
     console.log("DB ready");
   } catch(e) {
@@ -358,9 +360,9 @@ if (req.url === "/" && req.method === "GET") {
       if (err || token.errors) return send(res, 200, "<html><body style='background:#080f1e;color:white;text-align:center;padding:40px;font-family:sans-serif'><h2>❌ Login fehlgeschlagen</h2></body></html>");
       // Save athlete
       await pool.query(
-        `INSERT INTO athletes (id, firstname, access_token, refresh_token, expires_at) VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (id) DO UPDATE SET access_token=$3, refresh_token=$4, expires_at=$5`,
-        [token.athlete.id, token.athlete.firstname, token.access_token, token.refresh_token, token.expires_at]
+        `INSERT INTO athletes (id, firstname, access_token, refresh_token, expires_at, birthday) VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (id) DO UPDATE SET access_token=$3, refresh_token=$4, expires_at=$5`, birthday=$6,
+        [token.athlete.id, token.athlete.firstname, token.access_token, token.refresh_token, token.expires_at, token.athlete.birthday || null]]
       );
       const key = Math.random().toString(36).substring(2, 10);
       tokens[key] = { access_token: token.access_token, refresh_token: token.refresh_token, expires_at: token.expires_at, athlete: token.athlete };
