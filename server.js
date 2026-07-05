@@ -140,7 +140,7 @@ function calcFluidLoss(durationSec, heartrate, tempC, elevationM) {
 }
 
 // ── Card Logic ────────────────────────────────────────────────────────────────
-async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
+async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevationM) {
   // Get last 30 days of activities for comparison
   const result = await pool.query(
     "SELECT fluid_loss_ml, recorded_at FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '30 days' ORDER BY recorded_at DESC LIMIT 20",
@@ -296,7 +296,7 @@ async function processActivity(athleteId, activityId) {
       );
 
       // Build card
-      const message = await buildCard(athleteId, fluidLoss, durationSec, tempC, hr);
+      const message = await buildCard(athleteId, fluidLoss, durationSec, tempC, hr, elevationM);
 
       // Post to Strava
       stravaPut(activityId, token, message, (err, result) => {
