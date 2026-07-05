@@ -521,6 +521,14 @@ if (req.url === "/fix-webhook" && req.method === "GET") {
   reqD.end();
   return;
 }
+  // Manuell Aktivität verarbeiten
+if (req.url.startsWith("/process/") && req.method === "GET") {
+  const parts = req.url.split("/");
+  const athleteId = parts[2];
+  const activityId = parts[3];
+  processActivity(athleteId, activityId);
+  return send(res, 200, { status: "processing", athleteId, activityId });
+}
   send(res, 404, { error: "Nicht gefunden" });
 
 }).listen(PORT, "0.0.0.0", () => {
