@@ -146,6 +146,24 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
     "SELECT fluid_loss_ml, recorded_at FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '30 days' ORDER BY recorded_at DESC LIMIT 20",
     [String(athleteId)]
   );
+  // Get athlete birthday for HFmax
+const athleteResult = await pool.query(
+  "SELECT birthday FROM athletes WHERE id = $1",
+  [String(athleteId)]
+);
+const birthday = athleteResult.rows[0]?.birthday;
+const age = birthday ? Math.floor((Date.now() - new Date(birthday)) / (365.25 * 24 * 3600 * 1000)) : null;
+const hrMaxFormula = age ? 220 - age : null;
+
+// Get max HR from last 90 days
+const maxHrResult = await pool.query(
+  "SELECT MAX(heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
+  [String(athleteId)]
+);
+const hrMaxMeasured = maxHrResult.rows[0]?.max_hr || null;
+const hrMax = hrMaxMeasured || hrMaxFormula;
+const hrPct = (hr && hrMax) ? Math.round((hr / hrMax) * 100) : null;
+const hrEstimated = !hrMaxMeasured && hrMaxFormula;
   const history = result.rows;
   const avgLoss = history.length > 0
     ? Math.round(history.reduce((s, r) => s + r.fluid_loss_ml, 0) / history.length)
