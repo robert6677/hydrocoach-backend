@@ -466,6 +466,26 @@ if (req.url === "/setup" && req.method === "GET") {
   reqS.end();
   return;
 }
+  // Reset webhook
+if (req.url === "/reset-webhook" && req.method === "GET") {
+  const https2 = require("https");
+  // First get existing subscription
+  const reqG = https2.request({
+    hostname: "www.strava.com",
+    path: `/api/v3/push_subscriptions?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}`,
+    method: "GET"
+  }, (resG) => {
+    let raw = "";
+    resG.on("data", c => raw += c);
+    resG.on("end", () => {
+      const subs = JSON.parse(raw);
+      send(res, 200, subs);
+    });
+  });
+  reqG.on("error", (e) => send(res, 500, { error: e.message }));
+  reqG.end();
+  return;
+}
   send(res, 404, { error: "Nicht gefunden" });
 
 }).listen(PORT, "0.0.0.0", () => {
