@@ -486,6 +486,41 @@ if (req.url === "/reset-webhook" && req.method === "GET") {
   reqG.end();
   return;
 }
+  // Delete und neu registrieren
+if (req.url === "/fix-webhook" && req.method === "GET") {
+  const reqD = https.request({
+    hostname: "www.strava.com",
+    path: `/api/v3/push_subscriptions/353383?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}`,
+    method: "DELETE"
+  }, (resD) => {
+    resD.on("end", () => {
+      // Neu registrieren
+      const data = JSON.stringify({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        callback_url: `${BACKEND_URL}/webhook`,
+        verify_token: WEBHOOK_VERIFY_TOKEN
+      });
+      const reqN = https.request({
+        hostname: "www.strava.com",
+        path: "/api/v3/push_subscriptions",
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) }
+      }, (resN) => {
+        let raw = "";
+        resN.on("data", c => raw += c);
+        resN.on("end", () => send(res, 200, JSON.parse(raw)));
+      });
+      reqN.on("error", (e) => send(res, 500, { error: e.message }));
+      reqN.write(data);
+      reqN.end();
+    });
+    resD.resume();
+  });
+  reqD.on("error", (e) => send(res, 500, { error: e.message }));
+  reqD.end();
+  return;
+}
   send(res, 404, { error: "Nicht gefunden" });
 
 }).listen(PORT, "0.0.0.0", () => {
