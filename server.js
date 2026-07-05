@@ -207,35 +207,29 @@ const hrEstimated = !hrMaxMeasured && hrMaxFormula;
 
   if (cardType === "peak") {
     msg = `💧 ${lossL}L fluid loss
-📈 Highest in the last 14 days
-
-${ampel} ${load} – prioritize recovery today
-👉 Drink ${drinkL}L – fluids & rest first${needsElectrolytes ? "\n💡 Electrolytes recommended" : ""}
+${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+📈 Personal high – last 14 days
+🔴 Prioritize recovery today
 
 HydroPwr`;
   } else if (cardType === "heat") {
-    msg = `💧 ${lossL}L fluid loss
-🌡️ Heat significantly increased your loss${comparison ? `\n${comparison}` : ""}
-
-${ampel} ${load} – elevated strain from heat
-👉 Drink ${drinkL}L within the next 2h
+   msg = `💧 ${lossL}L fluid loss
+${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+🌡️ Heat increased sweat rate
 💡 Electrolytes recommended
 
 HydroPwr`;
   } else if (cardType === "fatigue") {
-    msg = `💧 ${lossL}L fluid loss
-📊 ${recentIntense + 1}rd intense session in 5 days${comparison ? `\n${comparison}` : ""}
-
-${ampel} High cumulative load
-👉 Prioritize recovery
-💡 Fluids & sleep especially important
+   msg = `💧 ${lossL}L fluid loss
+${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+📊 ${recentIntense + 1} intense sessions in 5 days
+😴 Recovery & sleep priority
 
 HydroPwr`;
   } else {
-    msg = `💧 ${lossL}L fluid loss${comparison ? `\n${comparison}` : ""}
-
-${ampel} ${load}
-👉 Drink ${drinkL}L today${needsElectrolytes ? "\n💡 Electrolytes optional" : ""}
+  msg = `💧 ${lossL}L fluid loss
+${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+${ampel} ${load}${comparison ? ` · ${comparison}` : ''}
 
 HydroPwr`;
   }
