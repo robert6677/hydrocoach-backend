@@ -206,32 +206,28 @@ const hrEstimated = !hrMaxMeasured && hrMaxFormula;
   let msg = "";
 
   if (cardType === "peak") {
-    msg = `💧 ${lossL}L fluid loss
-${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-📈 Personal high – last 14 days
-🔴 Prioritize recovery today
+    msg = `💧 ${lossL}L sweat loss · Season high
+${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}% ${hrEstimated ? 'est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+📈 Highest in 14 days – prioritize recovery${needsElectrolytes ? `\n💡 Consider electrolytes after this one` : ''}
 
-HydroPwr`;
+HydroPwr.app`;
   } else if (cardType === "heat") {
-   msg = `💧 ${lossL}L fluid loss
-${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-🌡️ Heat increased sweat rate
-💡 Electrolytes recommended
+   msg = `💧 ${lossL}L sweat loss${comparison ? ` · ${comparison}` : ''}
+${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}% ${hrEstimated ? 'est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+💡 Consider electrolytes after this one
 
-HydroPwr`;
+HydroPwr.app`;
   } else if (cardType === "fatigue") {
-   msg = `💧 ${lossL}L fluid loss
-${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-📊 ${recentIntense + 1} intense sessions in 5 days
-😴 Recovery & sleep priority
+   msg = `💧 ${lossL}L sweat loss${comparison ? ` · ${comparison}` : ''}
+${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}% ${hrEstimated ? 'est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
+📊 ${recentIntense + 1} hard sessions this week
 
-HydroPwr`;
+HydroPwr.app`;
   } else {
-  msg = `💧 ${lossL}L fluid loss
-${hr ? `❤️ ${hr}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-${ampel} ${load}${comparison ? ` · ${comparison}` : ''}
+  msg = `💧 ${lossL}L sweat loss${comparison ? ` · ${comparison}` : ''}
+${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}${needsElectrolytes ? `\n💡 Consider electrolytes after this one` : ''}
 
-HydroPwr`;
+HydroPwr.app`;
   }
 
   return msg;
