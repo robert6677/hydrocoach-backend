@@ -260,7 +260,7 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevati
   const age = birthday ? Math.floor((Date.now() - new Date(birthday)) / (365.25 * 24 * 3600 * 1000)) : null;
   const hrMaxFormula = age ? 220 - age : null;
   const maxHrResult = await pool.query(
-    "SELECT MAX(max_heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
+    "SELECT MAX(heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
     [String(athleteId)]
   );
   const hrMax = maxHrResult.rows[0]?.max_hr || hrMaxFormula;
