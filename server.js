@@ -149,7 +149,7 @@ function calcSweatMetrics(fluidLoss, durationSec, tempC, hr, hrMax, avgLoss) {
 
   return {
     lossL: (fluidLoss / 1000).toFixed(1),
-    rateL: sweatRate / 1000.toFixed(1),
+    rateL: (sweatRate / 1000).toFixed(1),
     sweatVsAverage,
     tempC,
     hr: hr ? Math.round(hr) : null,
