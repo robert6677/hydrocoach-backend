@@ -140,97 +140,145 @@ function calcFluidLoss(durationSec, heartrate, tempC, elevationM) {
 }
 
 // ── Card Logic ────────────────────────────────────────────────────────────────
+
+function calcSweatMetrics(fluidLoss, durationSec, tempC, hr, hrMax, avgLoss) {
+  const sweatRate = fluidLoss / (durationSec / 3600);
+  const sweatVsAverage = avgLoss ? Math.round(((fluidLoss - avgLoss) / avgLoss) * 100) : null;
+  const hrPct = (hr && hrMax) ? Math.round((hr / hrMax) * 100) : null;
+  const confidence = (tempC !== null && hr !== null) ? "HIGH" : (tempC !== null || hr !== null) ? "MEDIUM" : "LOW";
+
+  return {
+    lossL: (fluidLoss / 1000).toFixed(1),
+    rateL: sweatRate.toFixed(1),
+    sweatVsAverage,
+    tempC,
+    hr: hr ? Math.round(hr) : null,
+    hrPct,
+    durationH: durationSec / 3600,
+    confidence
+  };
+}
+
+function getComparison(metrics) {
+  if (metrics.sweatVsAverage === null) return null;
+  const pct = metrics.sweatVsAverage;
+  const sign = pct > 0 ? "+" : "";
+  return pct > 0
+    ? `📈 ${sign}${pct}% vs your 30-day average`
+    : `✅ ${sign}${pct}% vs your 30-day average`;
+}
+
+function getCauseInsight(metrics) {
+  const causeRules = [
+    {
+      priority: 100,
+      condition: metrics.confidence !== "LOW" && metrics.tempC > 30,
+      text: "🌡️ Heat was the main driver"
+    },
+    {
+      priority: 90,
+      condition: metrics.confidence !== "LOW" && metrics.tempC > 24 && metrics.hrPct > 75,
+      text: "🌡️ Heat & intensity combined"
+    },
+    {
+      priority: 80,
+      condition: metrics.hrPct !== null && metrics.hrPct > 85,
+      text: "❤️ High intensity drove sweat loss"
+    },
+    {
+      priority: 70,
+      condition: metrics.durationH > 3,
+      text: "⏱️ Long duration accumulated fluid loss"
+    }
+  ];
+
+  const match = causeRules
+    .filter(r => r.condition)
+    .sort((a, b) => b.priority - a.priority)[0];
+
+  return match ? match.text : null;
+}
+
+function getActionInsight(metrics, hardSessions) {
+  const actionRules = [
+    {
+      priority: 100,
+      condition: parseFloat(metrics.rateL) > 1.0,
+      text: "🧂 Consider replacing electrolytes"
+    },
+    {
+      priority: 80,
+      condition: hardSessions >= 3,
+      text: "⚡ Prioritize recovery today"
+    },
+    {
+      priority: 60,
+      condition: metrics.sweatVsAverage !== null && metrics.sweatVsAverage > 30,
+      text: "💧 Prioritize hydration today"
+    }
+  ];
+
+  const match = actionRules
+    .filter(r => r.condition)
+    .sort((a, b) => b.priority - a.priority)[0];
+
+  return match ? match.text : null;
+}
+
+function buildCardText(cardData) {
+  const lines = [
+    `💧 Est. sweat loss: ${cardData.loss}L · ${cardData.rate}L/h`,
+    cardData.comparison,
+    cardData.cause,
+    cardData.action
+  ].filter(Boolean);
+
+  return lines.join("\n") + "\n\nHydroPwr.app";
+}
+
 async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevationM) {
-  // Get last 30 days of activities for comparison
+  // Get history
   const result = await pool.query(
     "SELECT fluid_loss_ml, recorded_at FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '30 days' ORDER BY recorded_at DESC LIMIT 20",
     [String(athleteId)]
   );
-  // Get athlete birthday for HFmax
-const athleteResult = await pool.query(
-  "SELECT birthday FROM athletes WHERE id = $1",
-  [String(athleteId)]
-);
-const birthday = athleteResult.rows[0]?.birthday;
-const age = birthday ? Math.floor((Date.now() - new Date(birthday)) / (365.25 * 24 * 3600 * 1000)) : null;
-const hrMaxFormula = age ? 220 - age : null;
-
-// Get max HR from last 90 days
-const maxHrResult = await pool.query(
-  "SELECT MAX(heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
-  [String(athleteId)]
-);
-const hrMaxMeasured = maxHrResult.rows[0]?.max_hr || null;
-const hrMax = hrMaxMeasured || hrMaxFormula;
-const hrPct = (hr && hrMax) ? Math.round((hr / hrMax) * 100) : null;
-const hrEstimated = !hrMaxMeasured && hrMaxFormula;
   const history = result.rows;
   const avgLoss = history.length > 0
     ? Math.round(history.reduce((s, r) => s + r.fluid_loss_ml, 0) / history.length)
     : null;
-  const maxLoss14d = history.filter(r => {
-    const days = (Date.now() - new Date(r.recorded_at)) / 86400000;
-    return days <= 14;
-  }).reduce((m, r) => Math.max(m, r.fluid_loss_ml), 0);
-  const recentIntense = history.filter(r => {
+  const hardSessions = history.filter(r => {
     const days = (Date.now() - new Date(r.recorded_at)) / 86400000;
     return days <= 5 && r.fluid_loss_ml > 600;
   }).length;
 
-  const lossL = (currentLoss / 1000).toFixed(1);
-  const drinkMl = Math.round(currentLoss * 1.25 / 50) * 50;
-  const drinkL = (drinkMl / 1000).toFixed(1);
-  const needsElectrolytes = currentLoss > 700 || (tempC ?? 0) > 25 || durationSec > 5400;
+  // Get HRmax
+  const athleteResult = await pool.query(
+    "SELECT birthday FROM athletes WHERE id = $1",
+    [String(athleteId)]
+  );
+  const birthday = athleteResult.rows[0]?.birthday;
+  const age = birthday ? Math.floor((Date.now() - new Date(birthday)) / (365.25 * 24 * 3600 * 1000)) : null;
+  const hrMaxFormula = age ? 220 - age : null;
+  const maxHrResult = await pool.query(
+    "SELECT MAX(max_heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
+    [String(athleteId)]
+  );
+  const hrMax = maxHrResult.rows[0]?.max_hr || hrMaxFormula;
 
-  // Determine card type
-  let cardType = "standard";
-  if (currentLoss === maxLoss14d && history.length >= 3) cardType = "peak";
-  else if (tempC > 25 && hr > 150) cardType = "heat";
-  else if (recentIntense >= 2) cardType = "fatigue";
+  // Calculate metrics
+  const metrics = calcSweatMetrics(currentLoss, durationSec, tempC, hr, hrMax, avgLoss);
 
-  // Comparison text
-  let comparison = "";
-  if (avgLoss && history.length >= 3) {
-    const diff = currentLoss - avgLoss;
-    const pct = Math.abs(Math.round((diff / avgLoss) * 100));
-    if (Math.abs(diff) < 100) comparison = "Typical for you";
-    else if (diff > 0) comparison = pct > 30 ? "Significantly more than usual" : "Slightly more than usual";
-    else comparison = pct > 30 ? "Significantly less than usual" : "Slightly less than usual";
-  }
+  // Build card data
+  const cardData = {
+    loss: metrics.lossL,
+    rate: metrics.rateL,
+    comparison: getComparison(metrics),
+    cause: getCauseInsight(metrics),
+    action: getActionInsight(metrics, hardSessions)
+  };
 
-  // Ampel
-  const ampel = currentLoss > 1200 ? "🔴" : currentLoss > 600 ? "🟡" : "🟢";
-  const load = currentLoss > 1200 ? "High Intensity" : currentLoss > 600 ? "Moderate Intensity" : "Low Intensity";
-
-  // Build message based on card type
-  let msg = "";
-
-  if (cardType === "peak") {
-    msg = `💧 ${lossL}L sweat loss · Season high
-${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}% ${hrEstimated ? 'est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-📈 Highest in 14 days – prioritize recovery${needsElectrolytes ? `\n💡 Consider electrolytes after this one` : ''}
-
-HydroPwr.app`;
-  } else if (cardType === "heat") {
-   msg = `💧 ${lossL}L sweat loss${comparison ? ` · ${comparison}` : ''}
-${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}% ${hrEstimated ? 'est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-💡 Consider electrolytes after this one
-
-HydroPwr.app`;
-  } else if (cardType === "fatigue") {
-   msg = `💧 ${lossL}L sweat loss${comparison ? ` · ${comparison}` : ''}
-${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}% ${hrEstimated ? 'est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}
-📊 ${recentIntense + 1} hard sessions this week
-
-HydroPwr.app`;
-  } else {
-  msg = `💧 ${lossL}L sweat loss${comparison ? ` · ${comparison}` : ''}
-${hr ? `❤️ Ø ${Math.round(hr)}bpm${hrPct ? ` · ${hrPct}%${hrEstimated ? ' est.' : ''} HRmax` : ''}` : ''}${tempC ? ` · 🌡️ ${tempC}°C` : ''}${elevationM ? ` · ⛰️ ${Math.round(elevationM)}m` : ''}${needsElectrolytes ? `\n💡 Consider electrolytes after this one` : ''}
-
-HydroPwr.app`;
-  }
-
-  return msg;
+  return buildCardText(cardData);
+}
 }
 
 // ── Token Management ──────────────────────────────────────────────────────────
