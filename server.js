@@ -279,7 +279,7 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevati
 
   return buildCardText(cardData);
 }
-}
+
 
 // ── Token Management ──────────────────────────────────────────────────────────
 async function getValidToken(athleteId) {
