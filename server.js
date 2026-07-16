@@ -149,7 +149,7 @@ function calcSweatMetrics(fluidLoss, durationSec, tempC, hr, hrMax, avgLoss) {
 
   return {
     lossL: (fluidLoss / 1000).toFixed(1),
-    rateL: (sweatRate / 1000).toFixed(1),
+    rateL: (sweatRate / 1000).toFixed(2),
     sweatVsAverage,
     tempC,
     hr: hr ? Math.round(hr) : null,
@@ -168,11 +168,42 @@ function getComparison(metrics) {
     : `✅ ${sign}${pct}% vs your 30-day average`;
 }
 
-function getActionInsight(metrics, hardSessions, weeklyLoss) {
+function getCauseInsight(metrics) {
+  const causeRules = [
+    {
+      priority: 100,
+      condition: metrics.confidence !== "LOW" && metrics.tempC > 30,
+      text: "🌡️ Heat was the main driver"
+    },
+    {
+      priority: 90,
+      condition: metrics.confidence !== "LOW" && metrics.tempC > 24 && metrics.hrPct > 75,
+      text: "🌡️ Heat & intensity combined"
+    },
+    {
+      priority: 80,
+      condition: metrics.hrPct !== null && metrics.hrPct > 85,
+      text: "❤️ High intensity drove sweat loss"
+    },
+    {
+      priority: 70,
+      condition: metrics.durationH > 3,
+      text: "⏱️ Long duration accumulated fluid loss"
+    }
+  ];
+
+  const match = causeRules
+    .filter(r => r.condition)
+    .sort((a, b) => b.priority - a.priority)[0];
+
+  return match ? match.text : null;
+}
+
+function getActionInsight(metrics, weeklyLoss) {
   const actionRules = [
     {
       priority: 100,
-      condition: parseFloat(metrics.rateL) > 1.0,
+      condition: parseFloat(metrics.rateL) > 0.8,
       text: "🧂 Consider replacing electrolytes"
     },
     {
@@ -199,32 +230,6 @@ function getActionInsight(metrics, hardSessions, weeklyLoss) {
   return match ? match.text : null;
 }
 
-function getActionInsight(metrics, hardSessions) {
-  const actionRules = [
-    {
-      priority: 100,
-      condition: parseFloat(metrics.rateL) > 1.0,
-      text: "🧂 Consider replacing electrolytes"
-    },
-    {
-      priority: 80,
-      condition: hardSessions >= 3,
-      text: "⚡ Prioritize recovery today"
-    },
-    {
-      priority: 60,
-      condition: metrics.sweatVsAverage !== null && metrics.sweatVsAverage > 30,
-      text: "💧 Prioritize hydration today"
-    }
-  ];
-
-  const match = actionRules
-    .filter(r => r.condition)
-    .sort((a, b) => b.priority - a.priority)[0];
-
-  return match ? match.text : null;
-}
-
 function buildCardText(cardData) {
   const lines = [
     `💧 Est. sweat loss: ${cardData.loss}L · ${cardData.rate}L/h`,
@@ -237,7 +242,6 @@ function buildCardText(cardData) {
 }
 
 async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevationM) {
-  // Get history
   const result = await pool.query(
     "SELECT fluid_loss_ml, recorded_at FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '30 days' ORDER BY recorded_at DESC LIMIT 20",
     [String(athleteId)]
@@ -247,10 +251,9 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevati
     ? Math.round(history.reduce((s, r) => s + r.fluid_loss_ml, 0) / history.length)
     : null;
   const weeklyLoss = history
-  .filter(r => (Date.now() - new Date(r.recorded_at)) / 86400000 <= 7)
-  .reduce((s, r) => s + r.fluid_loss_ml, 0);
+    .filter(r => (Date.now() - new Date(r.recorded_at)) / 86400000 <= 7)
+    .reduce((s, r) => s + r.fluid_loss_ml, 0);
 
-  // Get HRmax
   const athleteResult = await pool.query(
     "SELECT birthday FROM athletes WHERE id = $1",
     [String(athleteId)]
@@ -259,21 +262,19 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevati
   const age = birthday ? Math.floor((Date.now() - new Date(birthday)) / (365.25 * 24 * 3600 * 1000)) : null;
   const hrMaxFormula = age ? 220 - age : null;
   const maxHrResult = await pool.query(
-    "SELECT MAX(heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
+    "SELECT MAX(max_heartrate) as max_hr FROM activities WHERE athlete_id = $1 AND recorded_at > NOW() - INTERVAL '90 days'",
     [String(athleteId)]
   );
   const hrMax = maxHrResult.rows[0]?.max_hr || hrMaxFormula;
 
-  // Calculate metrics
   const metrics = calcSweatMetrics(currentLoss, durationSec, tempC, hr, hrMax, avgLoss);
 
-  // Build card data
   const cardData = {
     loss: metrics.lossL,
     rate: metrics.rateL,
     comparison: getComparison(metrics),
     cause: getCauseInsight(metrics),
-    action: getActionInsight(metrics, 0, weeklyLoss)
+    action: getActionInsight(metrics, weeklyLoss)
   };
 
   return buildCardText(cardData);
