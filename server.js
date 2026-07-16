@@ -15,6 +15,8 @@ const WEBHOOK_VERIFY_TOKEN =
 const ADMIN_SECRET = process.env.ADMIN_SECRET || null;
 
 const TOKEN_TTL_MS = 10 * 60 * 1000;
+const DB_INIT_MAX_ATTEMPTS = Number(process.env.DB_INIT_MAX_ATTEMPTS || 15);
+const DB_INIT_DELAY_MS = Number(process.env.DB_INIT_DELAY_MS || 5000);
 
 // ── Static Files ──────────────────────────────────────────────────────────────
 let landingHtml = "<html><body><h1>HydroPwr</h1></body></html>";
@@ -37,60 +39,138 @@ try {
 }
 
 // ── Database ──────────────────────────────────────────────────────────────────
+const hasDatabase = Boolean(process.env.DATABASE_URL);
+let dbInitialized = false;
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL
-    ? { rejectUnauthorized: false }
-    : false
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-async function initDB() {
-  if (!process.env.DATABASE_URL) {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRetryableDbError(error) {
+  if (!error) return false;
+
+  const message = String(error.message || "").toLowerCase();
+  const code = String(error.code || "").toLowerCase();
+
+  return (
+    message.includes("the database system is starting up") ||
+    message.includes("connection terminated unexpectedly") ||
+    message.includes("could not connect") ||
+    message.includes("connection refused") ||
+    message.includes("timeout") ||
+    message.includes("terminating connection") ||
+    message.includes("remaining connection slots are reserved") ||
+    code === "57p03" || // cannot_connect_now
+    code === "ecconnrefused".toLowerCase() ||
+    code === "etimedout" ||
+    code === "econnreset"
+  );
+}
+
+async function waitForDatabase(maxAttempts = DB_INIT_MAX_ATTEMPTS, delayMs = DB_INIT_DELAY_MS) {
+  if (!hasDatabase) {
     console.warn("DATABASE_URL missing - DB features are disabled");
+    return false;
+  }
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`DB ping attempt ${attempt}/${maxAttempts}`);
+      await pool.query("SELECT 1");
+      console.log("DB connection established");
+      return true;
+    } catch (e) {
+      console.error(`DB ping failed on attempt ${attempt}:`, e.message);
+
+      if (attempt === maxAttempts || !isRetryableDbError(e)) {
+        return false;
+      }
+
+      await sleep(delayMs);
+    }
+  }
+
+  return false;
+}
+
+async function initDB(maxAttempts = DB_INIT_MAX_ATTEMPTS, delayMs = DB_INIT_DELAY_MS) {
+  if (!hasDatabase) {
+    console.warn("DATABASE_URL missing - DB features are disabled");
+    dbInitialized = false;
     return;
   }
 
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS athletes (
-        id BIGINT PRIMARY KEY,
-        firstname TEXT,
-        access_token TEXT,
-        refresh_token TEXT,
-        expires_at BIGINT,
-        birthday DATE,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-
-      CREATE TABLE IF NOT EXISTS activities (
-        id BIGINT PRIMARY KEY,
-        athlete_id BIGINT,
-        fluid_loss_ml INT,
-        duration_seconds INT,
-        distance_m DOUBLE PRECISION,
-        heartrate INT,
-        max_heartrate INT,
-        elevation_m DOUBLE PRECISION,
-        temp_c DOUBLE PRECISION,
-        sport_type TEXT,
-        activity_date TIMESTAMP,
-        recorded_at TIMESTAMP DEFAULT NOW()
-      );
-
-      ALTER TABLE athletes
-        ADD COLUMN IF NOT EXISTS birthday DATE;
-
-      ALTER TABLE activities
-        ADD COLUMN IF NOT EXISTS max_heartrate INT;
-
-      ALTER TABLE activities
-        ADD COLUMN IF NOT EXISTS activity_date TIMESTAMP;
-    `);
-
-    console.log("DB ready");
-  } catch (e) {
-    console.error("DB init error:", e.message);
+  const dbReady = await waitForDatabase(maxAttempts, delayMs);
+  if (!dbReady) {
+    console.error("Database never became ready");
+    dbInitialized = false;
+    return;
   }
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`DB init attempt ${attempt}/${maxAttempts}`);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS athletes (
+          id BIGINT PRIMARY KEY,
+          firstname TEXT,
+          access_token TEXT,
+          refresh_token TEXT,
+          expires_at BIGINT,
+          birthday DATE,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS activities (
+          id BIGINT PRIMARY KEY,
+          athlete_id BIGINT,
+          fluid_loss_ml INT,
+          duration_seconds INT,
+          distance_m DOUBLE PRECISION,
+          heartrate INT,
+          max_heartrate INT,
+          elevation_m DOUBLE PRECISION,
+          temp_c DOUBLE PRECISION,
+          sport_type TEXT,
+          activity_date TIMESTAMP,
+          recorded_at TIMESTAMP DEFAULT NOW()
+        );
+
+        ALTER TABLE athletes
+          ADD COLUMN IF NOT EXISTS birthday DATE;
+
+        ALTER TABLE activities
+          ADD COLUMN IF NOT EXISTS max_heartrate INT;
+
+        ALTER TABLE activities
+          ADD COLUMN IF NOT EXISTS activity_date TIMESTAMP;
+      `);
+
+      dbInitialized = true;
+      console.log("DB schema ready");
+      return;
+    } catch (e) {
+      console.error(`DB init error on attempt ${attempt}:`, e.message);
+
+      if (attempt === maxAttempts || !isRetryableDbError(e)) {
+        dbInitialized = false;
+        console.error("DB init failed permanently");
+        return;
+      }
+
+      await sleep(delayMs);
+    }
+  }
+}
+
+function isDbReady() {
+  return hasDatabase && dbInitialized;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -138,6 +218,7 @@ function parseJsonSafe(input, fallback = null) {
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
+
     req.on("data", chunk => {
       body += chunk;
       if (body.length > 2 * 1024 * 1024) {
@@ -145,6 +226,7 @@ function readRequestBody(req) {
         req.destroy();
       }
     });
+
     req.on("end", () => resolve(body));
     req.on("error", reject);
   });
@@ -160,6 +242,20 @@ function requireAdmin(req, res) {
     sendJson(res, 401, { error: "Unauthorized" });
     return false;
   }
+  return true;
+}
+
+function requireDbReadyHttp(res) {
+  if (!hasDatabase) {
+    sendJson(res, 503, { error: "Database not configured" });
+    return false;
+  }
+
+  if (!dbInitialized) {
+    sendJson(res, 503, { error: "Database not ready" });
+    return false;
+  }
+
   return true;
 }
 
@@ -191,7 +287,11 @@ function httpsRequestJson({
       },
       res => {
         let raw = "";
-        res.on("data", c => (raw += c));
+
+        res.on("data", c => {
+          raw += c;
+        });
+
         res.on("end", () => {
           const parsed = parseJsonSafe(raw, null);
 
@@ -355,7 +455,7 @@ function calcFluidLoss(durationSec, heartrate, tempC, elevationM) {
   const temp = tempC ?? 18;
   const elev = elevationM || 0;
 
-  const baseRate = 600; // ml/h
+  const baseRate = 600;
   const intensityFactor =
     hr > 170 ? 1.5 :
     hr > 155 ? 1.3 :
@@ -498,7 +598,7 @@ function buildCardText(cardData) {
 }
 
 async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
-  if (!process.env.DATABASE_URL) {
+  if (!isDbReady()) {
     const metrics = calcSweatMetrics(currentLoss, durationSec, tempC, hr, null, null);
     return buildCardText({
       loss: metrics.lossL,
@@ -570,20 +670,18 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
     avgLoss
   );
 
-  const cardData = {
+  return buildCardText({
     loss: metrics.lossL,
     rate: metrics.rateL,
     comparison: getComparison(metrics),
     cause: getCauseInsight(metrics),
     action: getActionInsight(metrics, weeklyLoss)
-  };
-
-  return buildCardText(cardData);
+  });
 }
 
 // ── Token Management ──────────────────────────────────────────────────────────
 async function getValidToken(athleteId) {
-  if (!process.env.DATABASE_URL) return null;
+  if (!isDbReady()) return null;
 
   const result = await pool.query(
     "SELECT * FROM athletes WHERE id = $1",
@@ -628,6 +726,11 @@ async function getValidToken(athleteId) {
 // ── Activity Processing ───────────────────────────────────────────────────────
 async function processActivity(athleteId, activityId) {
   try {
+    if (!isDbReady()) {
+      console.log("Skipping processActivity: DB not ready");
+      return;
+    }
+
     const token = await getValidToken(athleteId);
     if (!token) {
       console.log("No valid token for athlete", athleteId);
@@ -662,39 +765,37 @@ async function processActivity(athleteId, activityId) {
 
     const fluidLoss = calcFluidLoss(durationSec, hr, tempC, elevationM);
 
-    if (process.env.DATABASE_URL) {
-      await pool.query(
-        `INSERT INTO activities (
-          id, athlete_id, fluid_loss_ml, duration_seconds, distance_m,
-          heartrate, max_heartrate, elevation_m, temp_c, sport_type, activity_date
-        )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-        ON CONFLICT (id) DO UPDATE SET
-          athlete_id = EXCLUDED.athlete_id,
-          fluid_loss_ml = EXCLUDED.fluid_loss_ml,
-          duration_seconds = EXCLUDED.duration_seconds,
-          distance_m = EXCLUDED.distance_m,
-          heartrate = EXCLUDED.heartrate,
-          max_heartrate = EXCLUDED.max_heartrate,
-          elevation_m = EXCLUDED.elevation_m,
-          temp_c = EXCLUDED.temp_c,
-          sport_type = EXCLUDED.sport_type,
-          activity_date = EXCLUDED.activity_date`,
-        [
-          String(activityId),
-          String(athleteId),
-          fluidLoss,
-          durationSec,
-          distanceM,
-          hr ? Math.round(hr) : null,
-          maxHeartrate ? Math.round(maxHeartrate) : null,
-          elevationM ? Math.round(elevationM) : null,
-          tempC,
-          activity.sport_type || null,
-          dateIso
-        ]
-      );
-    }
+    await pool.query(
+      `INSERT INTO activities (
+        id, athlete_id, fluid_loss_ml, duration_seconds, distance_m,
+        heartrate, max_heartrate, elevation_m, temp_c, sport_type, activity_date
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      ON CONFLICT (id) DO UPDATE SET
+        athlete_id = EXCLUDED.athlete_id,
+        fluid_loss_ml = EXCLUDED.fluid_loss_ml,
+        duration_seconds = EXCLUDED.duration_seconds,
+        distance_m = EXCLUDED.distance_m,
+        heartrate = EXCLUDED.heartrate,
+        max_heartrate = EXCLUDED.max_heartrate,
+        elevation_m = EXCLUDED.elevation_m,
+        temp_c = EXCLUDED.temp_c,
+        sport_type = EXCLUDED.sport_type,
+        activity_date = EXCLUDED.activity_date`,
+      [
+        String(activityId),
+        String(athleteId),
+        fluidLoss,
+        durationSec,
+        distanceM,
+        hr ? Math.round(hr) : null,
+        maxHeartrate ? Math.round(maxHeartrate) : null,
+        elevationM ? Math.round(elevationM) : null,
+        tempC,
+        activity.sport_type || null,
+        dateIso
+      ]
+    );
 
     const message = await buildCard(
       athleteId,
@@ -784,25 +885,28 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     const pathname = url.pathname;
 
-    // Health
     if (pathname === "/health" && req.method === "GET") {
-      sendJson(res, 200, { ok: true, uptime: process.uptime() });
+      sendJson(res, 200, {
+        ok: true,
+        uptime: process.uptime(),
+        db: {
+          configured: hasDatabase,
+          ready: dbInitialized
+        }
+      });
       return;
     }
 
-    // Landing
     if (pathname === "/" && req.method === "GET") {
       sendHtml(res, 200, landingHtml);
       return;
     }
 
-    // Legal
     if (pathname === "/legal" && req.method === "GET") {
       sendHtml(res, 200, legalHtml);
       return;
     }
 
-    // Webhook verification
     if (pathname === "/webhook" && req.method === "GET") {
       const mode = url.searchParams.get("hub.mode");
       const token = url.searchParams.get("hub.verify_token");
@@ -818,7 +922,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Webhook event
     if (pathname === "/webhook" && req.method === "POST") {
       const body = await readRequestBody(req);
 
@@ -846,7 +949,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // OAuth callback
     if (pathname === "/callback" && req.method === "GET") {
       if (!CLIENT_ID || !CLIENT_SECRET) {
         sendHtml(
@@ -856,6 +958,8 @@ const server = http.createServer(async (req, res) => {
         );
         return;
       }
+
+      if (!requireDbReadyHttp(res)) return;
 
       const code = url.searchParams.get("code");
       if (!code) {
@@ -875,28 +979,26 @@ const server = http.createServer(async (req, res) => {
           throw new Error("Invalid Strava token response");
         }
 
-        if (process.env.DATABASE_URL) {
-          await pool.query(
-            `INSERT INTO athletes (
-              id, firstname, access_token, refresh_token, expires_at, birthday
-            )
-            VALUES ($1,$2,$3,$4,$5,$6)
-            ON CONFLICT (id) DO UPDATE SET
-              firstname = EXCLUDED.firstname,
-              access_token = EXCLUDED.access_token,
-              refresh_token = EXCLUDED.refresh_token,
-              expires_at = EXCLUDED.expires_at,
-              birthday = EXCLUDED.birthday`,
-            [
-              token.athlete.id,
-              token.athlete.firstname || null,
-              token.access_token,
-              token.refresh_token,
-              token.expires_at,
-              token.athlete.birthday || null
-            ]
-          );
-        }
+        await pool.query(
+          `INSERT INTO athletes (
+            id, firstname, access_token, refresh_token, expires_at, birthday
+          )
+          VALUES ($1,$2,$3,$4,$5,$6)
+          ON CONFLICT (id) DO UPDATE SET
+            firstname = EXCLUDED.firstname,
+            access_token = EXCLUDED.access_token,
+            refresh_token = EXCLUDED.refresh_token,
+            expires_at = EXCLUDED.expires_at,
+            birthday = EXCLUDED.birthday`,
+          [
+            token.athlete.id,
+            token.athlete.firstname || null,
+            token.access_token,
+            token.refresh_token,
+            token.expires_at,
+            token.athlete.birthday || null
+          ]
+        );
 
         const key = Math.random().toString(36).slice(2, 10);
         tokens[key] = {
@@ -920,7 +1022,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Get token by one-time key
     if (pathname.startsWith("/token/") && req.method === "GET") {
       const key = pathname.slice("/token/".length);
       const token = tokens[key];
@@ -942,8 +1043,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Refresh token
     if (pathname === "/refresh" && req.method === "POST") {
+      if (!requireDbReadyHttp(res)) return;
+
       const rawBody = await readRequestBody(req);
       const parsed = parseJsonSafe(rawBody, {});
 
@@ -972,7 +1074,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Setup webhook
     if (pathname === "/setup" && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
 
@@ -989,7 +1090,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // List webhooks
     if (pathname === "/reset-webhook" && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
 
@@ -1006,7 +1106,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Delete + recreate webhook
     if (pathname === "/fix-webhook" && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
 
@@ -1035,9 +1134,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Manual processing
     if (pathname.startsWith("/process/") && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
+      if (!requireDbReadyHttp(res)) return;
 
       const parts = pathname.split("/").filter(Boolean);
       const athleteId = parts[1];
@@ -1071,9 +1170,11 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log("HydroCoach Port " + PORT);
-  setTimeout(() => {
-    initDB().catch(err => console.error("initDB failed:", err.message));
-  }, 1000);
+
+  initDB().catch(err => {
+    dbInitialized = false;
+    console.error("initDB failed:", err.message);
+  });
 });
 
 // ── Process Error Handling ────────────────────────────────────────────────────
