@@ -17,6 +17,8 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET || null;
 const TOKEN_TTL_MS = 10 * 60 * 1000;
 const DB_INIT_MAX_ATTEMPTS = Number(process.env.DB_INIT_MAX_ATTEMPTS || 15);
 const DB_INIT_DELAY_MS = Number(process.env.DB_INIT_DELAY_MS || 5000);
+const DB_READY_WAIT_MS = Number(process.env.DB_READY_WAIT_MS || 45000);
+const DB_READY_INTERVAL_MS = Number(process.env.DB_READY_INTERVAL_MS || 1500);
 
 // ── Static Files ──────────────────────────────────────────────────────────────
 let landingHtml = "<html><body><h1>HydroPwr</h1></body></html>";
@@ -44,7 +46,10 @@ let dbInitialized = false;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  max: Number(process.env.PG_POOL_MAX || 3),
+  idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
+  connectionTimeoutMillis: Number(process.env.PG_CONNECTION_TIMEOUT_MS || 10000)
 });
 
 function sleep(ms) {
@@ -65,8 +70,9 @@ function isRetryableDbError(error) {
     message.includes("timeout") ||
     message.includes("terminating connection") ||
     message.includes("remaining connection slots are reserved") ||
-    code === "57p03" || // cannot_connect_now
-    code === "ecconnrefused".toLowerCase() ||
+    message.includes("the database deployment is sleeping") ||
+    code === "57p03" ||
+    code === "econnrefused" ||
     code === "etimedout" ||
     code === "econnreset"
   );
@@ -171,6 +177,39 @@ async function initDB(maxAttempts = DB_INIT_MAX_ATTEMPTS, delayMs = DB_INIT_DELA
 
 function isDbReady() {
   return hasDatabase && dbInitialized;
+}
+
+async function ensureDbReady(waitMs = DB_READY_WAIT_MS, intervalMs = DB_READY_INTERVAL_MS) {
+  if (!hasDatabase) return false;
+  if (dbInitialized) return true;
+
+  const start = Date.now();
+  console.log(`Waiting for DB readiness for up to ${waitMs}ms`);
+
+  while (Date.now() - start < waitMs) {
+    if (dbInitialized) {
+      console.log("DB became ready via init state");
+      return true;
+    }
+
+    try {
+      await pool.query("SELECT 1");
+      dbInitialized = true;
+      console.log("DB became ready via ensureDbReady()");
+      return true;
+    } catch (e) {
+      if (!isRetryableDbError(e)) {
+        console.error("Non-retryable DB readiness error:", e.message);
+        return false;
+      }
+      console.log("DB still not ready, retrying...");
+    }
+
+    await sleep(intervalMs);
+  }
+
+  console.log("DB did not become ready in time");
+  return false;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -726,8 +765,9 @@ async function getValidToken(athleteId) {
 // ── Activity Processing ───────────────────────────────────────────────────────
 async function processActivity(athleteId, activityId) {
   try {
-    if (!isDbReady()) {
-      console.log("Skipping processActivity: DB not ready");
+    const ready = await ensureDbReady();
+    if (!ready) {
+      console.log("Skipping processActivity after wait: DB not ready");
       return;
     }
 
@@ -897,6 +937,17 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/ready" && req.method === "GET") {
+      sendJson(res, dbInitialized ? 200 : 503, {
+        ok: dbInitialized,
+        db: {
+          configured: hasDatabase,
+          ready: dbInitialized
+        }
+      });
+      return;
+    }
+
     if (pathname === "/" && req.method === "GET") {
       sendHtml(res, 200, landingHtml);
       return;
@@ -959,7 +1010,11 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      if (!requireDbReadyHttp(res)) return;
+      const ready = await ensureDbReady();
+      if (!ready) {
+        sendJson(res, 503, { error: "Database not ready" });
+        return;
+      }
 
       const code = url.searchParams.get("code");
       if (!code) {
@@ -1044,7 +1099,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === "/refresh" && req.method === "POST") {
-      if (!requireDbReadyHttp(res)) return;
+      const ready = await ensureDbReady();
+      if (!ready) {
+        sendJson(res, 503, { error: "Database not ready" });
+        return;
+      }
 
       const rawBody = await readRequestBody(req);
       const parsed = parseJsonSafe(rawBody, {});
@@ -1136,7 +1195,12 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/process/") && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
-      if (!requireDbReadyHttp(res)) return;
+
+      const ready = await ensureDbReady();
+      if (!ready) {
+        sendJson(res, 503, { error: "Database not ready" });
+        return;
+      }
 
       const parts = pathname.split("/").filter(Boolean);
       const athleteId = parts[1];
@@ -1175,6 +1239,27 @@ server.listen(PORT, "0.0.0.0", () => {
     dbInitialized = false;
     console.error("initDB failed:", err.message);
   });
+});
+
+// ── Graceful Shutdown ─────────────────────────────────────────────────────────
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down gracefully...");
+  try {
+    await pool.end();
+  } catch (e) {
+    console.error("Error while closing pool:", e.message);
+  }
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down gracefully...");
+  try {
+    await pool.end();
+  } catch (e) {
+    console.error("Error while closing pool:", e.message);
+  }
+  process.exit(0);
 });
 
 // ── Process Error Handling ────────────────────────────────────────────────────
