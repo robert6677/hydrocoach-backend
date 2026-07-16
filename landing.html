@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HydroPwr – Hydration für Strava</title>
+  <title>HydroPwr – Smart Hydration for Strava</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
@@ -93,7 +93,7 @@
     .hero h1 .accent { color: var(--cyan); }
 
     .hero p {
-      max-width: 520px;
+      max-width: 540px;
       font-size: clamp(16px, 2.5vw, 19px);
       color: #8aa8c0;
       margin-bottom: 40px; line-height: 1.7;
@@ -133,7 +133,7 @@
       position: relative;
     }
     .card-preview::before {
-      content: 'Erscheint automatisch in Strava';
+      content: 'Appears automatically on Strava';
       position: absolute; top: -36px; left: 50%; transform: translateX(-50%);
       white-space: nowrap;
       font-size: 12px; color: var(--muted);
@@ -263,162 +263,56 @@
     /* FOOTER */
     footer {
       border-top: 1px solid var(--border);
-      padding: 32px 24px;
-      text-align: center;
-      font-size: 13px; color: var(--muted);
+      padding: 60px 24px;
+      background: var(--bg);
     }
-
-    @media (max-width: 600px) {
-      .hero h1 { letter-spacing: -1px; }
-      .card-preview { max-width: 100%; }
+    .footer-inner {
+      max-width: 900px; margin: 0 auto;
+      text-align: center;
+    }
+    .footer-disclaimer {
+      font-size: 12px; color: var(--muted);
+      line-height: 1.6; max-width: 700px; margin: 0 auto 24px;
+    }
+    .footer-copy {
+      font-size: 13px; color: var(--muted);
     }
   </style>
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo">Hydro<span>Pwr</span></div>
-  <a class="nav-cta" href="https://www.strava.com/oauth/authorize?client_id=252241&response_type=code&redirect_uri=https://hydropwr.app/callback&approval_prompt=force&scope=activity:read_all,activity:write">
-    Jetzt verbinden
-  </a>
-</nav>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">Hydro<span>Pwr</span></div>
+    <a href="#" class="nav-cta">Connect</a>
+  </nav>
 
-<section class="hero">
-  <div class="hero-eyebrow">Automatisch · Kostenlos · Für Strava</div>
-  <h1>Trink smart.<br><span class="accent">Nach jedem Training.</span></h1>
-  <p>HydroPwr berechnet deinen Flüssigkeitsverlust nach Intensität, Temperatur und Höhenprofil – und postet die Empfehlung automatisch in deine Strava-Aktivität.</p>
-  <div class="hero-actions">
-    <a class="btn-strava" href="https://www.strava.com/oauth/authorize?client_id=252241&response_type=code&redirect_uri=https://hydropwr.app/callback&approval_prompt=force&scope=activity:read_all,activity:write">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-      Mit Strava verbinden
-    </a>
-    <a class="btn-ghost" href="#how">Wie funktioniert es? ↓</a>
-  </div>
+  <!-- HERO -->
+  <main class="hero">
+    <div class="hero-eyebrow">Smart Post-Workout Hydration</div>
+    <h1>Stop guessing your <br><span class="accent">fluid loss.</span></h1>
+    <p>HydroPwr automatically calculates your personal sweat loss based on local weather and activity intensity. Injected straight into your Strava description. 100% Automated.</p>
+    
+    <div class="hero-actions">
+      <a href="#" class="btn-strava">
+        <svg viewBox="0 0 24 24">
+          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-4.156l-3.14 6.223h3.066L11.36 10.172h3.065L9.283 2 4.133 12.112h3.066v.004z"/>
+        </svg>
+        Connect with Strava
+      </a>
+      <a href="#how-it-works" class="btn-ghost">Learn how it works &rarr;</a>
+    </div>
 
-  <div class="card-preview">
-    <div class="card-activity"><div class="card-activity-dot"></div>Lunch Ride · heute · 59,7 km</div>
-    <div class="card-title">Lunch Ride</div>
-    <div class="card-body">💧 1.4L Flüssigkeitsverlust
-🟡 Mittlere Belastung
-🌡️ 28.7°C · ⛰️ 300m
-👉 Trink 1.75L heute
-💡 Elektrolyte empfohlen
-
-HydroPwr</div>
-    <div class="card-footer">Powered by HydroPwr · hydropwr.app</div>
-  </div>
-</section>
-
-<div class="stats">
-  <div class="stats-inner">
-    <div>
-      <div class="stat-num">3</div>
-      <div class="stat-label">Faktoren berechnet</div>
-    </div>
-    <div>
-      <div class="stat-num">&lt;2s</div>
-      <div class="stat-label">Nach dem Training</div>
-    </div>
-    <div>
-      <div class="stat-num">0€</div>
-      <div class="stat-label">Kostenlos</div>
-    </div>
-    <div>
-      <div class="stat-num">4</div>
-      <div class="stat-label">Karten-Typen</div>
-    </div>
-  </div>
-</div>
-
-<section class="section" id="how">
-  <div class="section-label">So funktioniert es</div>
-  <h2>Einmal verbinden.<br>Danach automatisch.</h2>
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">SCHRITT 01</div>
-      <div class="step-icon">🔗</div>
-      <h3>Strava verbinden</h3>
-      <p>Einmalig mit deinem Strava-Account einloggen. Dauert 30 Sekunden.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">SCHRITT 02</div>
-      <div class="step-icon">🚴‍♂️</div>
-      <h3>Training aufzeichnen</h3>
-      <p>Trainiere wie gewohnt – mit Garmin, Wahoo, Apple Watch oder direkt in Strava.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">SCHRITT 03</div>
-      <div class="step-icon">💧</div>
-      <h3>Empfehlung erscheint</h3>
-      <p>HydroPwr erkennt die Aktivität automatisch und postet die Hydrations-Karte in Sekunden.</p>
-    </div>
-  </div>
-</section>
-
-<section class="factors">
-  <div class="section-label">Die Berechnung</div>
-  <h2 style="font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,5vw,44px);font-weight:700;letter-spacing:-1px;line-height:1.1;margin-bottom:0">Mehr als nur Zeit und Distanz.</h2>
-  <div class="factor-grid">
-    <div class="factor">
-      <div class="factor-icon">⏱️</div>
-      <div>
-        <h4>Dauer & Intensität</h4>
-        <p>Herzfrequenz und Bewegungszeit bestimmen die Basis-Schwitzrate.</p>
+    <!-- STRAVA CARD PREVIEW -->
+    <div class="card-preview">
+      <div class="card-activity">
+        <div class="card-activity-dot"></div> Afternoon Ride
       </div>
+      <div class="card-title">Afternoon Ride</div>
+      <div class="card-body">💧 Est. sweat loss: 1.2L · 0.9L/h
+✅ -13% vs your 30-day average
+🌡️ Heat & intensity combined
+⚡ Prioritize recovery today</div>
+      <div class="card-footer">Calculated by HydroPwr.app</div>
     </div>
-    <div class="factor">
-      <div class="factor-icon">🌡️</div>
-      <div>
-        <h4>Temperatur</h4>
-        <p>Live-Wetterdaten vom Startpunkt deiner Aktivität fließen automatisch ein.</p>
-      </div>
-    </div>
-    <div class="factor">
-      <div class="factor-icon">⛰️</div>
-      <div>
-        <h4>Höhenprofil</h4>
-        <p>Bergtouren erhöhen den Flüssigkeitsbedarf – HydroPwr rechnet das ein.</p>
-      </div>
-    </div>
-    <div class="factor">
-      <div class="factor-icon">📊</div>
-      <div>
-        <h4>Deine Historie</h4>
-        <p>Vergleich mit deinen letzten 30 Tagen – war heute mehr oder weniger als üblich?</p>
-      </div>
-    </div>
-    <div class="factor">
-      <div class="factor-icon">🔴</div>
-      <div>
-        <h4>Belastungsampel</h4>
-        <p>Grün, Gelb oder Rot – auf einen Blick siehst du wie intensiv das Training war.</p>
-      </div>
-    </div>
-    <div class="factor">
-      <div class="factor-icon">💡</div>
-      <div>
-        <h4>Elektrolyt-Hinweis</h4>
-        <p>Bei Hitze oder langen Einheiten empfiehlt HydroPwr automatisch Elektrolyte.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="cta-section">
-  <h2>Bereit für dein<br>nächstes Training?</h2>
-  <p>Kostenlos · Keine App nötig · Funktioniert mit jedem Gerät</p>
-  <a class="btn-strava" href="https://www.strava.com/oauth/authorize?client_id=252241&response_type=code&redirect_uri=https://hydropwr.app/callback&approval_prompt=force&scope=activity:read_all,activity:write">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;fill:white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-    Mit Strava verbinden
-  </a>
-</section>
-
-<footer>
-  <p>© 2026 HydroPwr · 
-    <a href="mailto:hallo@hydropwr.app" style="color:var(--muted);text-decoration:none">hallo@hydropwr.app</a> · 
-    <a href="/legal" style="color:var(--muted);text-decoration:none">Impressum & Datenschutz</a>
-  </p>
-</footer>
-
-</body>
-</html>
+  </main>
