@@ -168,31 +168,31 @@ function getComparison(metrics) {
     : `✅ ${sign}${pct}% vs your 30-day average`;
 }
 
-function getCauseInsight(metrics) {
-  const causeRules = [
+function getActionInsight(metrics, hardSessions, weeklyLoss) {
+  const actionRules = [
     {
       priority: 100,
-      condition: metrics.confidence !== "LOW" && metrics.tempC > 30,
-      text: "🌡️ Heat was the main driver"
-    },
-    {
-      priority: 90,
-      condition: metrics.confidence !== "LOW" && metrics.tempC > 24 && metrics.hrPct > 75,
-      text: "🌡️ Heat & intensity combined"
+      condition: parseFloat(metrics.rateL) > 1.0,
+      text: "🧂 Consider replacing electrolytes"
     },
     {
       priority: 80,
-      condition: metrics.hrPct !== null && metrics.hrPct > 85,
-      text: "❤️ High intensity drove sweat loss"
+      condition: weeklyLoss > 4000,
+      text: "⚡ High weekly training load – consider extra recovery"
     },
     {
-      priority: 70,
-      condition: metrics.durationH > 3,
-      text: "⏱️ Long duration accumulated fluid loss"
+      priority: 60,
+      condition: weeklyLoss > 2500,
+      text: "💪 Active week – stay on top of hydration"
+    },
+    {
+      priority: 40,
+      condition: metrics.sweatVsAverage !== null && metrics.sweatVsAverage > 30,
+      text: "💧 Prioritize hydration today"
     }
   ];
 
-  const match = causeRules
+  const match = actionRules
     .filter(r => r.condition)
     .sort((a, b) => b.priority - a.priority)[0];
 
@@ -246,10 +246,9 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevati
   const avgLoss = history.length > 0
     ? Math.round(history.reduce((s, r) => s + r.fluid_loss_ml, 0) / history.length)
     : null;
-  const hardSessions = history.filter(r => {
-    const days = (Date.now() - new Date(r.recorded_at)) / 86400000;
-    return days <= 5 && r.fluid_loss_ml > 600;
-  }).length;
+  const weeklyLoss = history
+  .filter(r => (Date.now() - new Date(r.recorded_at)) / 86400000 <= 7)
+  .reduce((s, r) => s + r.fluid_loss_ml, 0);
 
   // Get HRmax
   const athleteResult = await pool.query(
@@ -274,7 +273,7 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr, elevati
     rate: metrics.rateL,
     comparison: getComparison(metrics),
     cause: getCauseInsight(metrics),
-    action: getActionInsight(metrics, hardSessions)
+    action: getActionInsight(metrics, 0, weeklyLoss)
   };
 
   return buildCardText(cardData);
