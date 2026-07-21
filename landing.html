@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HydroPwr – Smart Hydration for Strava</title>
+  <title>HydroPwr – Hydration Insights for Strava</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
@@ -93,7 +93,7 @@
     .hero h1 .accent { color: var(--cyan); }
 
     .hero p {
-      max-width: 540px;
+      max-width: 620px;
       font-size: clamp(16px, 2.5vw, 19px);
       color: #8aa8c0;
       margin-bottom: 40px; line-height: 1.7;
@@ -127,7 +127,7 @@
       background: white;
       border-radius: 16px;
       padding: 20px 24px;
-      max-width: 360px;
+      max-width: 380px;
       text-align: left;
       box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(34,211,238,0.2);
       position: relative;
@@ -215,15 +215,15 @@
       padding: 60px 24px;
     }
     .stats-inner {
-      max-width: 800px; margin: 0 auto;
+      max-width: 900px; margin: 0 auto;
       display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 40px; text-align: center;
     }
     .stat-num {
       font-family: 'DM Sans', sans-serif;
-      font-size: 40px; font-weight: 700;
-      color: var(--cyan); letter-spacing: -2px;
-      line-height: 1;
+      font-size: 28px; font-weight: 700;
+      color: var(--cyan); letter-spacing: -1px;
+      line-height: 1.1;
     }
     .stat-label { font-size: 13px; color: var(--muted); margin-top: 6px; }
 
@@ -277,6 +277,22 @@
     .footer-copy {
       font-size: 13px; color: var(--muted);
     }
+
+    @media (max-width: 640px) {
+      .nav-cta {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+      .btn-strava,
+      .btn-ghost {
+        width: 100%;
+        justify-content: center;
+      }
+      .hero-actions {
+        width: 100%;
+        max-width: 360px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -284,23 +300,23 @@
   <!-- NAV -->
   <nav>
     <div class="nav-logo">Hydro<span>Pwr</span></div>
-    <a href="#" class="nav-cta">Connect</a>
+    <a href="/auth" class="nav-cta">Connect with Strava</a>
   </nav>
 
   <!-- HERO -->
   <main class="hero">
-    <div class="hero-eyebrow">Smart Post-Workout Hydration</div>
-    <h1>Stop guessing your <br><span class="accent">fluid loss.</span></h1>
-    <p>HydroPwr automatically calculates your personal sweat loss based on local weather and activity intensity. Injected straight into your Strava description. 100% Automated.</p>
+    <div class="hero-eyebrow">Early beta for active Strava athletes</div>
+    <h1>Automatic hydration insights for your <br><span class="accent">Strava workouts</span></h1>
+    <p>HydroPwr helps runners, cyclists and triathletes better understand sweat loss, hydration strain and recovery after long or hot sessions — automatically, right inside Strava.</p>
     
     <div class="hero-actions">
-      <a href="#" class="btn-strava">
+      <a href="/auth" class="btn-strava">
         <svg viewBox="0 0 24 24">
           <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-4.156l-3.14 6.223h3.066L11.36 10.172h3.065L9.283 2 4.133 12.112h3.066v.004z"/>
         </svg>
         Connect with Strava
       </a>
-      <a href="#how-it-works" class="btn-ghost">Learn how it works &rarr;</a>
+      <a href="#how-it-works" class="btn-ghost">See how it works &rarr;</a>
     </div>
 
     <!-- STRAVA CARD PREVIEW -->
@@ -309,10 +325,126 @@
         <div class="card-activity-dot"></div> Afternoon Ride
       </div>
       <div class="card-title">Afternoon Ride</div>
-      <div class="card-body">💧 Est. sweat loss: 1.2L · 0.9L/h
-✅ -13% vs your 30-day average
-🌡️ Heat & intensity combined
-⚡ Prioritize recovery today</div>
-      <div class="card-footer">Calculated by HydroPwr.app</div>
+      <div class="card-body">💧 3.4L lost · 0.72L/h (~1 bottle/h)
+📊 +13% vs your 30-day average
+📈 Higher hydration strain than usual
+✅ Rehydrate over the next few hours</div>
+      <div class="card-footer">Added automatically by HydroPwr</div>
     </div>
   </main>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="section">
+    <div class="section-label">How it works</div>
+    <h2>Hydration insight without extra tracking</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">STEP 01</div>
+        <div class="step-icon">🔗</div>
+        <h3>Connect your Strava account</h3>
+        <p>Authorize HydroPwr once and it works automatically with your Strava activities.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">STEP 02</div>
+        <div class="step-icon">🏃</div>
+        <h3>Train as usual</h3>
+        <p>After longer or more demanding sessions, HydroPwr estimates sweat loss using workout data, weather and training context.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">STEP 03</div>
+        <div class="step-icon">📝</div>
+        <h3>Get a short post-workout summary</h3>
+        <p>Your Strava activity gets a compact hydration insight with fluid loss, personal context and a simple recovery cue.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-inner">
+      <div>
+        <div class="stat-num">100% automatic</div>
+        <div class="stat-label">No manual workout logging</div>
+      </div>
+      <div>
+        <div class="stat-num">Inside Strava</div>
+        <div class="stat-label">Appears on your activity automatically</div>
+      </div>
+      <div>
+        <div class="stat-num">Weather-aware</div>
+        <div class="stat-label">Includes local temperature context</div>
+      </div>
+      <div>
+        <div class="stat-num">Built for endurance</div>
+        <div class="stat-label">Useful for long or hot sessions</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FACTORS -->
+  <section class="factors">
+    <div class="section-label">What goes into it</div>
+    <h2>More than just workout duration</h2>
+
+    <div class="factor-grid">
+      <div class="factor">
+        <div class="factor-icon">🌡️</div>
+        <div>
+          <h4>Temperature</h4>
+          <p>Heat changes how much fluid you lose, so local weather matters.</p>
+        </div>
+      </div>
+
+      <div class="factor">
+        <div class="factor-icon">❤️</div>
+        <div>
+          <h4>Intensity</h4>
+          <p>Harder efforts usually drive higher sweat rates than easy sessions.</p>
+        </div>
+      </div>
+
+      <div class="factor">
+        <div class="factor-icon">⏱️</div>
+        <div>
+          <h4>Duration</h4>
+          <p>Long sessions can quietly add up to substantial total fluid loss.</p>
+        </div>
+      </div>
+
+      <div class="factor">
+        <div class="factor-icon">📊</div>
+        <div>
+          <h4>Training context</h4>
+          <p>HydroPwr compares each session with your recent training to add personal context.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="cta-section">
+    <h2>Try HydroPwr on your next workout</h2>
+    <p>Connect your Strava account and see how HydroPwr adds hydration insight after your training.</p>
+    <a href="/auth" class="btn-strava">
+      <svg viewBox="0 0 24 24">
+        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-4.156l-3.14 6.223h3.066L11.36 10.172h3.065L9.283 2 4.133 12.112h3.066v.004z"/>
+      </svg>
+      Connect with Strava
+    </a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <p class="footer-disclaimer">
+        HydroPwr provides estimated hydration insights based on workout data and environmental context. It is intended for informational purposes only and does not replace medical or professional sports nutrition advice.
+      </p>
+      <p class="footer-copy">© 2026 HydroPwr · Built for active Strava athletes</p>
+    </div>
+  </footer>
+
+</body>
+</html>
