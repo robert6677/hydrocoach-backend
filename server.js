@@ -526,7 +526,7 @@ function calcSweatMetrics(fluidLoss, durationSec, tempC, hr, hrMax, avgLoss) {
       : null;
 
   const hrPct =
-    hr && hrMax
+    hr != null && hrMax != null
       ? Math.round((hr / hrMax) * 100)
       : null;
 
@@ -549,87 +549,117 @@ function calcSweatMetrics(fluidLoss, durationSec, tempC, hr, hrMax, avgLoss) {
   };
 }
 
+function formatBottlesPerHour(rateL) {
+  const rate = parseFloat(rateL);
+  if (!Number.isFinite(rate) || rate <= 0) return null;
+
+  // Referenz: 1 bottle = 750 ml
+  const bottles = rate / 0.75;
+
+  let rounded;
+  if (bottles < 0.75) rounded = 0.5;
+  else if (bottles < 1.25) rounded = 1;
+  else if (bottles < 1.75) rounded = 1.5;
+  else if (bottles < 2.25) rounded = 2;
+  else rounded = Math.round(bottles * 2) / 2;
+
+  const label = rounded === 1 ? "bottle/h" : "bottles/h";
+  return `~${rounded} ${label}`;
+}
+
+function buildHeadline(metrics) {
+  const bottleText = formatBottlesPerHour(metrics.rateL);
+  return bottleText
+    ? `💧 ${metrics.lossL}L lost · ${metrics.rateL}L/h (${bottleText})`
+    : `💧 ${metrics.lossL}L lost · ${metrics.rateL}L/h`;
+}
+
 function getComparison(metrics) {
   if (metrics.sweatVsAverage === null) return null;
   const pct = metrics.sweatVsAverage;
   const sign = pct > 0 ? "+" : "";
-  return pct > 0
-    ? `Higher than your 30-day average: ${sign}${pct}%`
-    : `Vs your 30-day average: ${sign}${pct}%`;
+  return `📊 ${sign}${pct}% vs your 30-day average`;
 }
 
-function getCauseInsight(metrics) {
-  const causeRules = [
-    {
-      priority: 100,
-      condition: metrics.confidence !== "LOW" && metrics.tempC > 30,
-      text: "Main driver: heat"
-    },
-    {
-      priority: 90,
-      condition:
-        metrics.confidence !== "LOW" &&
-        metrics.tempC > 24 &&
-        metrics.hrPct !== null &&
-        metrics.hrPct > 75,
-      text: "Main driver: heat + intensity"
-    },
-    {
-      priority: 80,
-      condition: metrics.hrPct !== null && metrics.hrPct > 85,
-      text: "Main driver: high intensity"
-    },
-    {
-      priority: 70,
-      condition: metrics.durationH > 3,
-      text: "Main driver: long duration"
-    }
-  ];
+function getMeaningInsight(metrics, weeklyLoss) {
+  // 1. Besonders relevante Kombination
+  if (
+    metrics.tempC !== null &&
+    metrics.tempC >= 28 &&
+    metrics.hrPct !== null &&
+    metrics.hrPct >= 80
+  ) {
+    return "🌡️ Heat and intensity pushed fluid loss up";
+  }
 
-  const match = causeRules
-    .filter(r => r.condition)
-    .sort((a, b) => b.priority - a.priority)[0];
+  // 2. Wenn deutlich über dem persönlichen Muster, das zuerst sagen
+  if (metrics.sweatVsAverage !== null && metrics.sweatVsAverage >= 20) {
+    return "📈 Clearly above your usual range";
+  }
 
-  return match ? match.text : null;
+  if (metrics.sweatVsAverage !== null && metrics.sweatVsAverage >= 10) {
+    return "📈 Higher hydration strain than usual";
+  }
+
+  // 3. Danach Hauptursachen
+  if (metrics.tempC !== null && metrics.tempC >= 28) {
+    return "🌡️ Heat pushed fluid loss up";
+  }
+
+  if (metrics.hrPct !== null && metrics.hrPct >= 85) {
+    return "❤️ Intensity pushed sweat loss up";
+  }
+
+  if (metrics.durationH >= 2.5) {
+    return "⏱️ Fluid loss built up over time";
+  }
+
+  // 4. Wochenlast als sekundäre Einordnung
+  if (weeklyLoss > 4000) {
+    return "📈 Higher hydration strain this week";
+  }
+
+  return "📊 Within your usual range";
 }
+
 
 function getActionInsight(metrics, weeklyLoss) {
-  const actionRules = [
-    {
-      priority: 100,
-      condition: parseFloat(metrics.rateL) > 0.8,
-      text: "Consider electrolytes today"
-    },
-    {
-      priority: 80,
-      condition: weeklyLoss > 4000,
-      text: "High weekly load - prioritize recovery"
-    },
-    {
-      priority: 60,
-      condition: weeklyLoss > 2500,
-      text: "Active week - stay on top of hydration"
-    },
-    {
-      priority: 40,
-      condition:
-        metrics.sweatVsAverage !== null && metrics.sweatVsAverage > 30,
-      text: "Prioritize hydration today"
-    }
-  ];
+  const rate = parseFloat(metrics.rateL);
+  const loss = parseFloat(metrics.lossL);
 
-  const match = actionRules
-    .filter(r => r.condition)
-    .sort((a, b) => b.priority - a.priority)[0];
+  if (rate >= 1.0) {
+    return "🧂 Consider electrolytes today";
+  }
 
-  return match ? match.text : null;
+  if (loss >= 3.0) {
+    return "✅ Rehydrate over the next few hours";
+  }
+
+  if (weeklyLoss > 4000) {
+    return "✅ Start your next session well rehydrated";
+  }
+
+  if (metrics.sweatVsAverage !== null && metrics.sweatVsAverage >= 10) {
+    return "💧 Prioritize rehydration today";
+  }
+
+  if (metrics.durationH >= 2.5) {
+    return "💧 Refill before your next session";
+  }
+
+  if (rate >= 0.75) {
+    return "✅ Rehydrate over the next few hours";
+  }
+
+  return "✅ Rehydrate well today";
 }
+
 
 function buildCardText(cardData) {
   const lines = [
-    `Est. sweat loss: ${cardData.loss}L · ${cardData.rate}L/h`,
+    cardData.headline,
     cardData.comparison,
-    cardData.cause,
+    cardData.meaning,
     cardData.action
   ].filter(Boolean);
 
@@ -637,16 +667,15 @@ function buildCardText(cardData) {
 }
 
 async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
-  if (!isDbReady()) {
-    const metrics = calcSweatMetrics(currentLoss, durationSec, tempC, hr, null, null);
-    return buildCardText({
-      loss: metrics.lossL,
-      rate: metrics.rateL,
-      comparison: null,
-      cause: getCauseInsight(metrics),
-      action: getActionInsight(metrics, 0)
-    });
-  }
+if (!isDbReady()) {
+  const metrics = calcSweatMetrics(currentLoss, durationSec, tempC, hr, null, null);
+  return buildCardText({
+    headline: buildHeadline(metrics),
+    comparison: null,
+    meaning: getMeaningInsight(metrics, 0),
+    action: getActionInsight(metrics, 0)
+  });
+}
 
   const historyResult = await pool.query(
     `SELECT fluid_loss_ml, activity_date
@@ -710,12 +739,11 @@ async function buildCard(athleteId, currentLoss, durationSec, tempC, hr) {
   );
 
   return buildCardText({
-    loss: metrics.lossL,
-    rate: metrics.rateL,
-    comparison: getComparison(metrics),
-    cause: getCauseInsight(metrics),
-    action: getActionInsight(metrics, weeklyLoss)
-  });
+  headline: buildHeadline(metrics),
+  comparison: getComparison(metrics),
+  meaning: getMeaningInsight(metrics, weeklyLoss),
+  action: getActionInsight(metrics, weeklyLoss)
+});
 }
 
 // ── Token Management ──────────────────────────────────────────────────────────
