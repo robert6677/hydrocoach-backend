@@ -985,7 +985,27 @@ const server = http.createServer(async (req, res) => {
       sendHtml(res, 200, legalHtml);
       return;
     }
+if (pathname === "/auth" && req.method === "GET") {
+  if (!CLIENT_ID) {
+    sendJson(res, 500, { error: "STRAVA_CLIENT_ID missing" });
+    return;
+  }
 
+  const redirectUri = `${BACKEND_URL}/callback`;
+  const authUrl =
+    `https://www.strava.com/oauth/authorize` +
+    `?client_id=${encodeURIComponent(CLIENT_ID)}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&approval_prompt=auto` +
+    `&scope=${encodeURIComponent("read,activity:read_all")}`;
+
+  console.log("Redirecting to Strava OAuth");
+  res.writeHead(302, { Location: authUrl });
+  res.end();
+  return;
+}
+    
     if (pathname === "/webhook" && req.method === "GET") {
       const mode = url.searchParams.get("hub.mode");
       const token = url.searchParams.get("hub.verify_token");
